@@ -1,5 +1,4 @@
 #include "tetris.h"
-#include "pieces/i_piece.h"
 
 Tetris::Tetris() {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0)
@@ -29,9 +28,7 @@ Tetris::Tetris() {
 
     _left_margin = (_width - _grid_width) / 2;
 
-    _pieces.push_back(new IPiece(1, 1));
-
-    _pieces.at(0)->rotate_right();
+    _pieces.push_back(_create_piece(Pieces::I, 1, 1));
 
     _init_tetris_grid();
 }
@@ -41,6 +38,27 @@ Tetris::~Tetris() {
     SDL_DestroyRenderer(_renderer);
     SDL_DestroyWindow(_window);
     SDL_Quit();
+}
+
+Piece *Tetris::_create_piece(Pieces piece, int i, int j) {
+    switch (piece) {
+        case Pieces::I:
+            return new IPiece(i, j);
+        case Pieces::J:
+            return new JPiece(i, j);
+        case Pieces::L:
+            return new LPiece(i, j);
+        case Pieces::O:
+            return new OPiece(i, j);
+        case Pieces::S:
+            return new SPiece(i, j);
+        case Pieces::T:
+            return new TPiece(i, j);
+        case Pieces::Z:
+            return new ZPiece(i, j);
+    }
+
+    return new IPiece(i, j);
 }
 
 void Tetris::_init_tetris_grid() {
@@ -84,7 +102,34 @@ void Tetris::_handle_events() {
         case SDL_QUIT:
             _running = false;
             break;
+        case SDL_KEYDOWN:
+            switch (event.key.keysym.sym) {
+                case SDLK_UP:
+                    _pieces.at(0)->rotate_right();
+                    break;
+                case SDLK_LEFT:
+                    _pieces.at(0)->move_left();
+                    break;
+                case SDLK_RIGHT:
+                    _pieces.at(0)->move_right();
+                    break;
+            }
+            break;
     }
+}
+
+void Tetris::_move_pieces() {
+    unsigned int current_time = SDL_GetTicks();
+
+    if (current_time - _last_time < 1000)
+        return;
+
+
+    for (auto &piece:_pieces) {
+        piece->move_down();
+    }
+
+    _last_time = current_time;
 }
 
 void Tetris::_draw_pieces() {
@@ -113,6 +158,7 @@ void Tetris::_draw_pieces() {
 
 void Tetris::render() {
     _handle_events();
+    _move_pieces();
 
     SDL_SetRenderDrawColor(_renderer, 241, 241, 241, 255);
     SDL_RenderClear(_renderer);

@@ -3,10 +3,24 @@
 #include <vector>
 #include <stdexcept>
 #include <SDL.h>
+#include "tetris_config.h"
 #include "pieces/piece.h"
+#include "pieces/i_piece.h"
+#include "pieces/o_piece.h"
+#include "pieces/j_piece.h"
+#include "pieces/t_piece.h"
+#include "pieces/z_piece.h"
+#include "pieces/s_piece.h"
+#include "pieces/l_piece.h"
 
 class Tetris {
 private:
+    enum Pieces {
+        I, J, L, O, S, T, Z
+    };
+
+    unsigned int _last_time{0};
+
     int _width{800};
     int _height{1000};
 
@@ -15,8 +29,8 @@ private:
     SDL_Window *_window;
     SDL_Renderer *_renderer;
 
-    int _pixel_width_count{10};
-    int _pixel_height_count{20};
+    int _pixel_width_count = TetrisConfig::pixel_width_count;
+    int _pixel_height_count = TetrisConfig::pixel_height_count;
 
     int _pixel_size{0};
     int _grid_width{0};
@@ -32,9 +46,13 @@ private:
 
 private:
 
+    Piece *_create_piece(Pieces piece, int i, int j);
+
     void _init_tetris_grid();
 
     void _handle_events();
+
+    void _move_pieces();
 
     void _draw_pieces();
 
