@@ -1,24 +1,14 @@
 #pragma once
 
-#include <vector>
-#include <stdexcept>
-#include <SDL.h>
-#include "tetris_config.h"
 #include "pieces/piece.h"
-#include "pieces/i_piece.h"
-#include "pieces/o_piece.h"
-#include "pieces/j_piece.h"
-#include "pieces/t_piece.h"
-#include "pieces/z_piece.h"
-#include "pieces/s_piece.h"
-#include "pieces/l_piece.h"
+#include "tetris_config.h"
+#include <SDL.h>
+#include <random>
+#include <stdexcept>
+#include <vector>
 
 class Tetris {
 private:
-    enum Pieces {
-        I, J, L, O, S, T, Z
-    };
-
     unsigned int _last_time{0};
 
     int _width{800};
@@ -29,8 +19,9 @@ private:
     SDL_Window *_window;
     SDL_Renderer *_renderer;
 
-    int _pixel_width_count = TetrisConfig::pixel_width_count;
-    int _pixel_height_count = TetrisConfig::pixel_height_count;
+    const int _pixel_width_count = TetrisConfig::pixel_width_count;
+    const int _pixel_height_count = TetrisConfig::pixel_height_count;
+    unsigned int _ascending_delay = TetrisConfig::ascending_delay;
 
     int _pixel_size{0};
     int _grid_width{0};
@@ -40,24 +31,35 @@ private:
     int _top_margin{50};
     int _bottom_margin{50};
 
-    SDL_Texture *_grid_texture;
+    SDL_Texture *_grid_texture{};
 
     std::vector<Piece *> _pieces;
 
+    std::vector<std::vector<bool>> _grid{(size_t) _pixel_width_count,
+                                         std::vector<bool>(_pixel_height_count)};
+
+    std::random_device _rd;
+    std::mt19937 _gen{_rd()};
+
+    // distributions
+    std::uniform_int_distribution<> _distribution{0, 6};
+    std::uniform_int_distribution<> _x_distribution{0, _pixel_width_count - 1};
+
+
 private:
-
-    Piece *_create_piece(Pieces piece, int i, int j);
-
     void _init_tetris_grid();
 
+    Piece *_get_last_piece();
+
     void _handle_events();
+
+    void _spawn_piece();
 
     void _move_pieces();
 
     void _draw_pieces();
 
 public:
-
     Tetris();
 
     ~Tetris();
@@ -66,4 +68,3 @@ public:
 
     [[nodiscard]] inline bool is_running() const { return _running; }
 };
-

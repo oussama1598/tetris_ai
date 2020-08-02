@@ -10,8 +10,7 @@ Tetris::Tetris() {
             SDL_WINDOWPOS_CENTERED,
             _width,
             _height,
-            SDL_WINDOW_ALLOW_HIGHDPI
-    );
+            SDL_WINDOW_ALLOW_HIGHDPI);
 
     _renderer = SDL_CreateRenderer(_window, -1, SDL_RENDERER_PRESENTVSYNC);
 
@@ -28,37 +27,17 @@ Tetris::Tetris() {
 
     _left_margin = (_width - _grid_width) / 2;
 
-    _pieces.push_back(_create_piece(Pieces::I, 1, 1));
-
     _init_tetris_grid();
 }
 
 Tetris::~Tetris() {
-//    SDL_DestroyTexture(texture_);
+    //    for (auto &piece: _pieces)
+    //        delete piece;
+
+    SDL_DestroyTexture(_grid_texture);
     SDL_DestroyRenderer(_renderer);
     SDL_DestroyWindow(_window);
     SDL_Quit();
-}
-
-Piece *Tetris::_create_piece(Pieces piece, int i, int j) {
-    switch (piece) {
-        case Pieces::I:
-            return new IPiece(i, j);
-        case Pieces::J:
-            return new JPiece(i, j);
-        case Pieces::L:
-            return new LPiece(i, j);
-        case Pieces::O:
-            return new OPiece(i, j);
-        case Pieces::S:
-            return new SPiece(i, j);
-        case Pieces::T:
-            return new TPiece(i, j);
-        case Pieces::Z:
-            return new ZPiece(i, j);
-    }
-
-    return new IPiece(i, j);
 }
 
 void Tetris::_init_tetris_grid() {
@@ -66,8 +45,7 @@ void Tetris::_init_tetris_grid() {
             _renderer,
             SDL_PIXELFORMAT_RGBA8888,
             SDL_TEXTUREACCESS_TARGET,
-            _grid_width, _grid_height
-    );
+            _grid_width, _grid_height);
 
     // to render to the texture instead of screen
     SDL_SetRenderTarget(_renderer, _grid_texture);
@@ -93,6 +71,11 @@ void Tetris::_init_tetris_grid() {
     SDL_SetRenderTarget(_renderer, nullptr);
 }
 
+Piece *Tetris::_get_last_piece() {
+    return _pieces.at(_pieces.size() - 1);
+}
+
+
 void Tetris::_handle_events() {
     SDL_Event event;
 
@@ -105,47 +88,67 @@ void Tetris::_handle_events() {
         case SDL_KEYDOWN:
             switch (event.key.keysym.sym) {
                 case SDLK_UP:
-                    _pieces.at(0)->rotate_right();
+                    _get_last_piece()->rotate_right();
                     break;
                 case SDLK_LEFT:
-                    _pieces.at(0)->move_left();
+                    _get_last_piece()->move_left();
                     break;
                 case SDLK_RIGHT:
-                    _pieces.at(0)->move_right();
+                    _get_last_piece()->move_right();
                     break;
             }
             break;
     }
 }
 
+void Tetris::_spawn_piece() {
+    if (_pieces.empty() || _get_last_piece()->is_landed()) {
+        int random_piece_id = _distribution(_gen);
+
+        auto *piece = new Piece(static_cast<Piece::Pieces>(random_piece_id), _x_distribution(_gen),
+                                 0);
+        piece->fix_out_of_bounds();
+
+        _pieces.push_back(
+                piece);
+    }
+}
+
 void Tetris::_move_pieces() {
     unsigned int current_time = SDL_GetTicks();
 
-    if (current_time - _last_time < 1000)
+    if (current_time - _last_time < _ascending_delay)
         return;
 
 
-    for (auto &piece:_pieces) {
-        piece->move_down();
+    for (auto &piece : _pieces) {
+        piece->move_down(_grid);
     }
 
     _last_time = current_time;
 }
 
 void Tetris::_draw_pieces() {
-    for (auto &piece: _pieces) {
+    for (auto &column : _grid)
+        std::fill(column.begin(), column.end(), false);
+
+    for (auto &piece : _pieces) {
         int i = piece->get_i();
         int j = piece->get_j();
 
         SDL_Color color = piece->get_color();
 
-        for (auto &block: piece->get_blocks()) {
+        for (auto &block : piece->get_blocks()) {
+            int block_i = i + block.i;
+            int block_j = j + block.j;
+
+            _grid[block_i][block_j] = true;
+
             SDL_Rect rect{
-                    _pixel_size * (i + block.i) + _left_margin,
-                    _pixel_size * (j + block.j) + _top_margin,
+                    _pixel_size * block_i + _left_margin,
+                    _pixel_size * block_j + _top_margin,
                     _pixel_size,
-                    _pixel_size
-            };
+                    _pixel_size};
 
             SDL_SetRenderDrawColor(_renderer, color.r, color.g, color.b, color.a);
             SDL_RenderFillRect(_renderer, &rect);
@@ -158,7 +161,7 @@ void Tetris::_draw_pieces() {
 
 void Tetris::render() {
     _handle_events();
-    _move_pieces();
+    _spawn_piece();
 
     SDL_SetRenderDrawColor(_renderer, 241, 241, 241, 255);
     SDL_RenderClear(_renderer);
@@ -168,6 +171,7 @@ void Tetris::render() {
     SDL_RenderCopy(_renderer, _grid_texture, &src, &dist);
 
     _draw_pieces();
+    _move_pieces();
 
     SDL_RenderPresent(_renderer);
 }

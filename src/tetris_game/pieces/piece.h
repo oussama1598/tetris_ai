@@ -1,9 +1,9 @@
 #pragma once
 
+#include "../tetris_config.h"
+#include <SDL2/SDL_pixels.h>
 #include <iostream>
 #include <vector>
-#include <SDL2/SDL_pixels.h>
-#include "../tetris_config.h"
 
 class Piece {
 private:
@@ -13,6 +13,16 @@ private:
     bool _moves_blocked{false};
 
 public:
+    enum Pieces {
+        I,
+        J,
+        L,
+        O,
+        S,
+        T,
+        Z
+    };
+
     struct position {
         int i;
         int j;
@@ -22,19 +32,19 @@ protected:
     SDL_Color _color{255, 0, 0, 255};
 
     bool _has_pivot{false};
-    position _pivot;
+    position _pivot{};
 
     std::vector<position> _blocks;
 
 private:
-
     bool _out_of_bounds();
 
-    bool _piece_landed() const;
+    bool _has_collided(std::vector<std::vector<bool>> &grid);
+
+    [[nodiscard]] bool _piece_landed() const;
 
 public:
-
-    Piece(int i, int j);
+    Piece(Pieces piece, int i, int j);
 
     [[nodiscard]] inline int get_i() const { return _i; }
 
@@ -44,14 +54,16 @@ public:
 
     inline std::vector<position> &get_blocks() { return _blocks; }
 
-    virtual void rotate_left();
+    [[nodiscard]] inline bool is_landed() const { return _moves_blocked; }
 
-    virtual void rotate_right();
+    void fix_out_of_bounds();
 
-    virtual void move_down();
+    void rotate_left();
 
-    virtual void move_left();
+    void rotate_right();
 
-    virtual void move_right();
+    void move_down(std::vector<std::vector<bool>> &grid);
+
+    void move_left();
+    void move_right();
 };
-
