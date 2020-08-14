@@ -105,8 +105,12 @@ void Tetris::_spawn_piece() {
     if (_pieces.empty() || _get_last_piece()->is_landed()) {
         int random_piece_id = _distribution(_gen);
 
-        auto *piece = new Piece(static_cast<Piece::Pieces>(random_piece_id), _x_distribution(_gen),
-                                 0);
+        auto *piece = new Piece(
+                static_cast<Piece::Pieces>(random_piece_id),
+                _pieces.size(),
+                _grid,
+                _x_distribution(_gen),
+                0);
         piece->fix_out_of_bounds();
 
         _pieces.push_back(
@@ -122,7 +126,7 @@ void Tetris::_move_pieces() {
 
 
     for (auto &piece : _pieces) {
-        piece->move_down(_grid);
+        piece->move_down();
     }
 
     _last_time = current_time;
@@ -130,7 +134,7 @@ void Tetris::_move_pieces() {
 
 void Tetris::_draw_pieces() {
     for (auto &column : _grid)
-        std::fill(column.begin(), column.end(), false);
+        std::fill(column.begin(), column.end(), -1);
 
     for (auto &piece : _pieces) {
         int i = piece->get_i();
@@ -142,7 +146,7 @@ void Tetris::_draw_pieces() {
             int block_i = i + block.i;
             int block_j = j + block.j;
 
-            _grid[block_i][block_j] = true;
+            _grid[block_i][block_j] = piece->get_id();
 
             SDL_Rect rect{
                     _pixel_size * block_i + _left_margin,
@@ -170,8 +174,8 @@ void Tetris::render() {
     SDL_Rect dist = {_left_margin, _top_margin, _grid_width, _grid_height};
     SDL_RenderCopy(_renderer, _grid_texture, &src, &dist);
 
-    _draw_pieces();
     _move_pieces();
+    _draw_pieces();
 
     SDL_RenderPresent(_renderer);
 }

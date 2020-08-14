@@ -1,14 +1,18 @@
 #pragma once
 
-#include "../tetris_config.h"
-#include <SDL2/SDL_pixels.h>
 #include <iostream>
 #include <vector>
+#include <algorithm>
+#include <SDL2/SDL_pixels.h>
+#include "../tetris_config.h"
 
 class Piece {
 private:
     int _i{0};
     int _j{0};
+    int _id{-1};
+
+    std::vector<std::vector<int>> _grid;
 
     bool _moves_blocked{false};
 
@@ -39,16 +43,18 @@ protected:
 private:
     bool _out_of_bounds();
 
-    bool _has_collided(std::vector<std::vector<bool>> &grid);
+    bool _has_collided();
 
     [[nodiscard]] bool _piece_landed() const;
 
 public:
-    Piece(Pieces piece, int i, int j);
+    Piece(Pieces piece, int id, std::vector<std::vector<int>> &grid, int i, int j);
 
     [[nodiscard]] inline int get_i() const { return _i; }
 
     [[nodiscard]] inline int get_j() const { return _j; }
+
+    [[nodiscard]] inline int get_id() const { return _id; };
 
     [[nodiscard]] inline SDL_Color get_color() const { return _color; }
 
@@ -62,8 +68,9 @@ public:
 
     void rotate_right();
 
-    void move_down(std::vector<std::vector<bool>> &grid);
+    void move_down();
 
     void move_left();
+
     void move_right();
 };

@@ -35,8 +35,8 @@ private:
 
     std::vector<Piece *> _pieces;
 
-    std::vector<std::vector<bool>> _grid{(size_t) _pixel_width_count,
-                                         std::vector<bool>(_pixel_height_count)};
+    std::vector<std::vector<int>> _grid{(size_t) _pixel_width_count,
+                                         std::vector<int>(_pixel_height_count)};
 
     std::random_device _rd;
     std::mt19937 _gen{_rd()};

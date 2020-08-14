@@ -1,6 +1,7 @@
 #include "piece.h"
 
-Piece::Piece(Pieces piece, int i, int j) : _i(i), _j(j) {
+Piece::Piece(Pieces piece, int id, std::vector<std::vector<int>> &grid, int i, int j)
+    : _i(i), _j(j), _id(id), _grid(grid) {
     switch (piece) {
         case Pieces::I:
             _has_pivot = true;
@@ -106,21 +107,19 @@ bool Piece::_out_of_bounds() {
 }
 
 bool Piece::_piece_landed() const {
-    for (auto &block : _blocks) {
+    return std::any_of(_blocks.begin(), _blocks.end(), [&](auto &block) {
         int j = _j + block.j;
 
-        if (j == (TetrisConfig::pixel_height_count - 1)) return true;
-    }
-
-    return false;
+        return j == (TetrisConfig::pixel_height_count - 1);
+    });
 }
 
-bool Piece::_has_collided(std::vector<std::vector<bool>> &grid) {
+bool Piece::_has_collided() {
     for (auto &block : _blocks) {
         int i = _i + block.i;
         int j = _j + block.j;
 
-        if (grid[i][j]) return true;
+        if (_grid[i][j] != -1 && _grid[i][j] != _id) return true;
     }
 
     return false;
@@ -198,7 +197,7 @@ void Piece::rotate_right() {
     fix_out_of_bounds();
 }
 
-void Piece::move_down(std::vector<std::vector<bool>> &grid) {
+void Piece::move_down() {
     if (_moves_blocked) return;
 
     _j += 1;
@@ -206,10 +205,12 @@ void Piece::move_down(std::vector<std::vector<bool>> &grid) {
     if (_out_of_bounds())
         _j -= 1;
 
-    if (_has_collided(grid)) {
+    if (_has_collided()) {
         _j -= 1;
 
         _moves_blocked = true;
+
+        return;
     }
 
     _moves_blocked = _piece_landed();
@@ -222,6 +223,9 @@ void Piece::move_left() {
 
     if (_out_of_bounds())
         _i += 1;
+
+    if (_has_collided())
+        _i += 1;
 }
 
 void Piece::move_right() {
@@ -230,5 +234,8 @@ void Piece::move_right() {
     _i += 1;
 
     if (_out_of_bounds())
+        _i -= 1;
+
+    if (_has_collided())
         _i -= 1;
 }
