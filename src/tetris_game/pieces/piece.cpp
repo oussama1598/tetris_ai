@@ -239,3 +239,12 @@ void Piece::move_right() {
     if (_has_collided())
         _i -= 1;
 }
+void Piece::remove_block(int i, int j) {
+    _blocks.erase(std::remove_if(_blocks.begin(), _blocks.end(), [&](position &block) {
+                      int block_i = _i + block.i;
+                      int block_j = _j + block.j;
+
+                      return block_i == i && block_j == j;
+                  }),
+                  _blocks.end());
+}

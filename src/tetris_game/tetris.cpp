@@ -27,6 +27,9 @@ Tetris::Tetris() {
 
     _left_margin = (_width - _grid_width) / 2;
 
+    for (auto &column : _grid)
+        std::fill(column.begin(), column.end(), -1);
+
     _init_tetris_grid();
 }
 
@@ -113,8 +116,7 @@ void Tetris::_spawn_piece() {
                 0);
         piece->fix_out_of_bounds();
 
-        _pieces.push_back(
-                piece);
+        _pieces.insert({_pieces.size(), piece});
     }
 }
 
@@ -126,27 +128,38 @@ void Tetris::_move_pieces() {
 
 
     for (auto &piece : _pieces) {
-        piece->move_down();
+        piece.second->move_down();
     }
 
     _last_time = current_time;
 }
 
-void Tetris::_draw_pieces() {
+void Tetris::_update_grid() {
     for (auto &column : _grid)
         std::fill(column.begin(), column.end(), -1);
 
     for (auto &piece : _pieces) {
-        int i = piece->get_i();
-        int j = piece->get_j();
-
-        SDL_Color color = piece->get_color();
-
-        for (auto &block : piece->get_blocks()) {
+        int i = piece.second->get_i();
+        int j = piece.second->get_j();
+        for (auto &block : piece.second->get_blocks()) {
             int block_i = i + block.i;
             int block_j = j + block.j;
 
-            _grid[block_i][block_j] = piece->get_id();
+            _grid[block_i][block_j] = piece.second->get_id();
+        }
+    }
+}
+
+void Tetris::_draw_pieces() {
+    for (auto &piece : _pieces) {
+        int i = piece.second->get_i();
+        int j = piece.second->get_j();
+
+        SDL_Color color = piece.second->get_color();
+
+        for (auto &block : piece.second->get_blocks()) {
+            int block_i = i + block.i;
+            int block_j = j + block.j;
 
             SDL_Rect rect{
                     _pixel_size * block_i + _left_margin,
@@ -163,9 +176,52 @@ void Tetris::_draw_pieces() {
     }
 }
 
+void Tetris::_remove_line(int j) {
+    for (size_t i = 0; i < _grid.size(); ++i) {
+        int piece_id = _grid[i][j];
+
+        _pieces.at(piece_id)->remove_block(i, j);
+    }
+}
+
+void Tetris::_remove_lines() {
+    if (!_get_last_piece()->is_landed()) {
+        return;
+    }
+
+    int max_j = 0;
+    int remove_count = 0;
+
+    for (size_t j = _grid[0].size() - 1; j > 0; --j) {
+        for (size_t i = 0; i < _grid.size(); ++i) {
+            if (_grid[i][j] == -1) break;
+
+            if (i == _grid.size() - 1) {
+                _remove_line(j);
+
+                max_j = std::max(max_j, (int) j);
+                remove_count += 1;
+            }
+        }
+    }
+
+    for (auto &piece : _pieces) {
+        for (auto &block : piece.second->get_blocks()) {
+            int block_j = piece.second->get_j() + block.j;
+
+            if (block_j < max_j) {
+                block.j += remove_count;
+            }
+        }
+    }
+}
+
 void Tetris::render() {
     _handle_events();
+    _update_grid();
+
     _spawn_piece();
+    _update_grid();
 
     SDL_SetRenderDrawColor(_renderer, 241, 241, 241, 255);
     SDL_RenderClear(_renderer);
@@ -175,6 +231,11 @@ void Tetris::render() {
     SDL_RenderCopy(_renderer, _grid_texture, &src, &dist);
 
     _move_pieces();
+    _update_grid();
+
+    _remove_lines();
+    _update_grid();
+
     _draw_pieces();
 
     SDL_RenderPresent(_renderer);

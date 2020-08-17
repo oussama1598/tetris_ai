@@ -1,10 +1,10 @@
 #pragma once
 
+#include "../tetris_config.h"
+#include <SDL2/SDL_pixels.h>
+#include <algorithm>
 #include <iostream>
 #include <vector>
-#include <algorithm>
-#include <SDL2/SDL_pixels.h>
-#include "../tetris_config.h"
 
 class Piece {
 private:
@@ -56,6 +56,8 @@ public:
 
     [[nodiscard]] inline int get_id() const { return _id; };
 
+    inline void set_moves_blocked(bool value) { _moves_blocked = value; }
+
     [[nodiscard]] inline SDL_Color get_color() const { return _color; }
 
     inline std::vector<position> &get_blocks() { return _blocks; }
@@ -73,4 +75,5 @@ public:
     void move_left();
 
     void move_right();
+    void remove_block(int i, int j);
 };

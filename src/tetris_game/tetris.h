@@ -1,11 +1,13 @@
 #pragma once
 
-#include "pieces/piece.h"
-#include "tetris_config.h"
-#include <SDL.h>
 #include <random>
 #include <stdexcept>
 #include <vector>
+#include <map>
+#include <SDL.h>
+#include "pieces/piece.h"
+#include "tetris_config.h"
+
 
 class Tetris {
 private:
@@ -33,7 +35,7 @@ private:
 
     SDL_Texture *_grid_texture{};
 
-    std::vector<Piece *> _pieces;
+    std::map<int, Piece *> _pieces;
 
     std::vector<std::vector<int>> _grid{(size_t) _pixel_width_count,
                                          std::vector<int>(_pixel_height_count)};
@@ -59,12 +61,16 @@ private:
 
     void _draw_pieces();
 
+    void _remove_line(int j);
+
+    void _remove_lines();
+
 public:
+
     Tetris();
 
     ~Tetris();
-
     void render();
-
     [[nodiscard]] inline bool is_running() const { return _running; }
+void _update_grid();
 };
